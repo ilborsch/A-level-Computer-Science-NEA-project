@@ -1,0 +1,39 @@
+rediska/
+├── app/
+│   ├── __init__.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── database.py
+│   │   ├── parser.py
+│   │   ├── tcp_server.py
+│   │   ├── file_handler.py
+│   │   ├── cache.py
+│   │   ├── hashing.py
+│   │   ├── cli.py
+│   │   ├── config.py
+│   ├── library/
+│   │   ├── __init__.py
+│   │   └── library.py
+│   └── utils/
+│       ├── __init__.py
+│       └── utils.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_cli.py
+│   ├── test_database.py
+│   ├── test_parser.py
+│   ├── test_socket_connection.py
+│   ├── test_file_handler.py
+│   ├── test_cache.py
+│   ├── test_hashing.py
+│   ├── test_config.py
+│   ├── test_library.py
+│   └── test_utils.py
+├── examples/
+│   ├── basic_usage.py
+│   └── advanced_features.py
+├── config/
+│   └── prod.yaml
+├── README.md
+├── setup.py
+└── requirements.txt
