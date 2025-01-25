@@ -3,6 +3,8 @@ from collections import namedtuple
 from collections.abc import Hashable as HashableKey
 from config import HashFunctionType
 
+# ./app/core/hashing.py
+
 
 KeyValue = namedtuple('KeyValue', ['key', 'value'])
 K = TypeVar('K', bound=Hashable)
@@ -10,12 +12,30 @@ V = TypeVar('V', bound=Any)
 
 
 class HashMap(Generic[K, V]):
+    """
+    A generic hash map implementation supporting custom hash functions.
+    Built using list of `buckets` as a method of collision resolution.
+
+    Attributes:
+        __size (int): The size of the hash table.
+        __pairs_amount (int): The number of key-value pairs in the hash map.
+        __table (list[list[KeyValue]]): The hash table storing key-value pairs in buckets.
+        __hash_function (Callable): The hash function used for mapping keys.
+    """
+
     def __init__(self, size: int = 100, hash_function_type: HashFunctionType = None) -> None:
+        """
+        Initialize a HashMap instance.
+
+        Args:
+            size (int): The size of the hash table.
+            hash_function_type (HashFunctionType, optional): The hash function type to use.
+        """
         self.__size = size
         self.__pairs_amount = 0
         self.__table: list[list[KeyValue[Hashable, Any]]] = [[] for _ in range(size)]
         if hash_function_type is None:
-            self.__hash_function = HashFunctionFactory.division_method
+            self.__hash_function = HashFunctionFactory.division_method  # division by default
         else:
             self.__hash_function = HashFunctionFactory.get_hash_function(hash_function_type)
 
@@ -65,10 +85,11 @@ class HashMap(Generic[K, V]):
 
         index = self.__hash_function(key, self.__size)
         if len(self.__table[index]) == 0:
-            self.__table[index].append(KeyValue(key=key, value=value))
+            self.__table[index].append(KeyValue(key=key, value=value))  # append to bucket if empty
             self.__pairs_amount += 1
             return
 
+        # if the bucket is not empty, then check if the key is already in the bucket
         for i, pair in enumerate(self.__table[index]):
             if pair.key == key:
                 self.__table[index][i] = KeyValue(key=key, value=value)
@@ -96,7 +117,7 @@ class HashMap(Generic[K, V]):
         index = self.__hash_function(key, self.__size)
         for i, pair in enumerate(self.__table[index]):
             if pair.key == key:
-                self.__table[index].pop(i)
+                self.__table[index].pop(i)  # remove from bucket
                 self.__pairs_amount -= 1
                 return pair.value
 
@@ -154,20 +175,51 @@ class HashMap(Generic[K, V]):
             return False
 
     def __iter__(self):
+        """
+        Iterate over the key-value pairs in the hash map.
+
+        Yields:
+            KeyValue: Each key-value pair in the hash map.
+        """
         for bucket in self.__table:
-            for key_value in bucket:
+            for key_value in bucket:   # iterator through all keys
                 yield key_value
 
     def items(self):
+        """
+        Get an iterator over all key-value pairs in the hash map.
+
+        Returns:
+            Iterator[KeyValue]: An iterator of key-value pairs.
+        """
         return iter(self)
 
     def __len__(self):
+        """
+        Get the number of key-value pairs in the hash map.
+
+        Returns:
+            int: The number of key-value pairs.
+        """
         return self.__pairs_amount
 
 
 class HashFunctionFactory:
+    """
+    A factory class for generating hash functions.
+    """
+
     @classmethod
     def get_hash_function(cls, hash_function_type: HashFunctionType) -> Callable[[K, int], int]:
+        """
+        Get a hash function based on the specified type.
+
+        Args:
+            hash_function_type (HashFunctionType): The type of hash function to generate.
+
+        Returns:
+            Callable[[K, int], int]: The hash function.
+        """
         match hash_function_type:
             case HashFunctionType.Division:
                 return cls.division_method
@@ -185,23 +237,62 @@ class HashFunctionFactory:
 
     @staticmethod
     def __string_to_numeric(key):
+        """
+        Convert a string key to a numeric value for hashing.
+
+        Args:
+            key (str): The string key.
+
+        Returns:
+            int: The numeric value of the key.
+        """
         return sum(ord(char) for char in key)
 
     @classmethod
     def division_method(cls, key: K, size: int) -> int:
+        """
+        Hash function using the division method.
+
+        Args:
+            key (K): The key to hash.
+            size (int): The size of the hash table.
+
+        Returns:
+            int: The hash index.
+        """
         return hash(key) % size
 
     @classmethod
     def multiplication_method(cls, key: K, size: int) -> int:
+        """
+        Hash function using the multiplication method.
+
+        Args:
+            key (K): The key to hash.
+            size (int): The size of the hash table.
+
+        Returns:
+            int: The hash index.
+        """
         if isinstance(key, str):
             key = cls.__string_to_numeric(key)
 
-        A = 0.61803398875
+        A = 0.61803398875  # Constant for multiplication method
         fractional_part = (key * A) % 1
         return int(size * fractional_part)
 
     @classmethod
     def mid_square_method(cls, key: K, size: int) -> int:
+        """
+        Hash function using the mid-square method.
+
+        Args:
+            key (K): The key to hash.
+            size (int): The size of the hash table.
+
+        Returns:
+            int: The hash index.
+        """
         if isinstance(key, str):
             key = cls.__string_to_numeric(key)
 
@@ -218,6 +309,16 @@ class HashFunctionFactory:
 
     @classmethod
     def folding_method(cls, key: K, size: int) -> int:
+        """
+        Hash function using the folding method.
+
+        Args:
+            key (K): The key to hash.
+            size (int): The size of the hash table.
+
+        Returns:
+            int: The hash index.
+        """
         if isinstance(key, str):
             key = cls.__string_to_numeric(key)
 
@@ -230,6 +331,16 @@ class HashFunctionFactory:
 
     @classmethod
     def djb2(cls, key: K, size: int) -> int:
+        """
+        Hash function using the DJB2 algorithm.
+
+        Args:
+            key (K): The key to hash.
+            size (int): The size of the hash table.
+
+        Returns:
+            int: The hash index.
+        """
         if not isinstance(key, str):
             return cls.division_method(key, size)
 
@@ -237,4 +348,3 @@ class HashFunctionFactory:
         for char in key:
             hash_value = ((hash_value * 33) + ord(char)) % size
         return hash_value
-

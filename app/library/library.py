@@ -3,9 +3,21 @@ from typing import Hashable, Any
 from dataclasses import dataclass
 from enum import Enum
 
+# ./app/library/library.py
+
 
 @dataclass
 class Config:
+    """
+    Represents the configuration details for Rediska.
+
+    Attributes:
+        username (str): The username of the logged-in user.
+        cache_type (str): The type of cache being used (e.g., TTL, LRU, LFU).
+        hash_function (str): The hash function used for the cache.
+        capacity (int): The capacity of the cache.
+        ttl (int): The time-to-live (TTL) value for cache items in seconds.
+    """
     username: str
     cache_type: str
     hash_function: str
@@ -14,10 +26,24 @@ class Config:
 
 
 class RediskaQueryError(Exception):
+    """
+    Exception raised when a query to the Rediska server fails.
+    """
     pass
 
 
 class SetConfigKey(Enum):
+    """
+    Enum representing valid keys for SET_CONFIG commands.
+
+    Attributes:
+        CacheType (str): Key for setting the cache type.
+        Username (str): Key for setting the username.
+        Password (str): Key for setting the password.
+        HashFunctionType (str): Key for setting the hash function type.
+        StorageCapacity (str): Key for setting the cache storage capacity.
+        TTLSeconds (str): Key for setting the time-to-live (TTL) value.
+    """
     CacheType = "cache_type"
     Username = "username"
     Password = "password"
@@ -27,12 +53,31 @@ class SetConfigKey(Enum):
 
 
 class CacheType(Enum):
+    """
+    Enum representing the supported cache types.
+
+    Attributes:
+        TTL (str): Time-to-Live cache.
+        LRU (str): Least Recently Used cache.
+        LFU (str): Least Frequently Used cache.
+    """
     TTL = "ttl"
     LRU = "lru"
     LFU = "lfu"
 
 
 class HashFunctionType(Enum):
+    """
+    Enum representing the supported hash function types.
+
+    Attributes:
+        PythonHash (str): Default Python hash function.
+        Division (str): Division method for hashing.
+        Multiplication (str): Multiplication method for hashing.
+        MidSquareMethod (str): Mid-square method for hashing.
+        FoldingMethod (str): Folding method for hashing.
+        DJB2 (str): DJB2 hash function.
+    """
     PythonHash = "py_hash"
     Division = "division"
     Multiplication = "multiplication"
@@ -42,30 +87,80 @@ class HashFunctionType(Enum):
 
 
 class Rediska:
+    """
+    A client interface for interacting with the Rediska server.
+
+    Provides methods to perform cache operations, manage configurations, and communicate with the server.
+
+    Attributes:
+        __tcp_client (TCPClient): The TCP client for communication with the server.
+    """
+
     def __init__(self):
+        """
+        Initialize a Rediska instance and set up the TCP client.
+        """
         self.__tcp_client = TCPClient('localhost')
 
     def __del__(self):
+        """
+        Ensure the connection to the server is closed when the object is deinitialized (deleted).
+        """
         self.close_connection()
 
     def connect(self):
+        """
+        Establish a connection to the Rediska server.
+        """
         self.__tcp_client.connect()
 
     def close_connection(self):
+        """
+        Close the connection to the Rediska server.
+        """
         self.__tcp_client.close_connection()
 
     def get(self, key: Hashable) -> str:
+        """
+        Retrieve a value from the cache.
+
+        Args:
+            key (Hashable): The key to retrieve.
+
+        Returns:
+            str: The value associated with the key.
+        """
         query = f"GET {key}"
         response = self.__tcp_client.send(query)
         return response
 
     def set(self, key: Hashable, value: Any):
+        """
+        Set a key-value pair in the cache.
+
+        Args:
+            key (Hashable): The key to set.
+            value (Any): The value to associate with the key.
+
+        Raises:
+            RediskaQueryError: If the server response indicates an error.
+        """
         query = f"SET {key} {value}"
         response = self.__tcp_client.send(query)
         if response != "SUCCESS":
             raise RediskaQueryError(f"Invalid query: {response}")
 
     def set_config(self, key: SetConfigKey, value: str):
+        """
+        Update a configuration setting on the server.
+
+        Args:
+            key (SetConfigKey): The configuration key to update.
+            value (str): The new value for the configuration key.
+
+        Raises:
+            RediskaQueryError: If the key or value is invalid or the server response indicates an error.
+        """
         if key not in SetConfigKey:
             raise RediskaQueryError("Invalid key for SET_CONFIG. Please, check documentation.")
 
@@ -84,18 +179,41 @@ class Rediska:
             raise RediskaQueryError(f"Invalid query: {response}")
 
     def remove(self, key: Hashable):
+        """
+        Remove a key-value pair from the cache.
+
+        Args:
+            key (Hashable): The key to remove.
+
+        Raises:
+            RediskaQueryError: If the server response indicates an error.
+        """
         query = f"REMOVE {key}"
         response = self.__tcp_client.send(query)
         if response != "SUCCESS":
             raise RediskaQueryError(f"Invalid query: {response}")
 
     def get_config_raw(self) -> str:
+        """
+        Retrieve the raw configuration details from the server.
+
+        Returns:
+            str: The raw configuration details as a string.
+        """
         query = f"CONFIG"
         response = self.__tcp_client.send(query)
         return response
 
     def get_config(self) -> Config:
+        """
+        Retrieve and parse the configuration details from the server.
+
+        Returns:
+            Config: The parsed configuration details.
+        """
         raw_config = self.get_config_raw()
+
+        # parse config data by lines
         lines = list(filter(lambda x: len(x) > 1, map(lambda line: line.strip().split(': '), raw_config.split('\n'))))
         return Config(
             username=lines[0][1],

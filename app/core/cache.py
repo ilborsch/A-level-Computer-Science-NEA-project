@@ -7,6 +7,8 @@ import threading
 import time
 import config
 
+# ./app/core/cache.py
+
 
 class Cache(ABC):
     """
@@ -142,6 +144,13 @@ class TTLValue:
 class TTLCache(Cache):
     """
     A cache implementation with Time-To-Live (TTL) functionality.
+
+    TTL Cache stores key-value pairs with an expiration time,
+    ensuring pairs are automatically removed when their time-to-live (TTL) expires.
+
+    Built upon custom implementation of HashMap.
+    Employs threading.Lock to maintain data integrity during simultaneous access.
+    Runs cleanup thread which checks pairs ttl every second.
     """
 
     def __init__(self, ttl_seconds: int, capacity: int, hash_func_type: HashFunctionType = None):
@@ -220,6 +229,7 @@ class TTLCache(Cache):
         while True:
             time.sleep(1)
             with self.__lock:
+                # generate a list of expired key-value pairs.
                 keys_to_remove = [key for key, item in self.__data.items() if item.ttl and item.ttl <= time.time()]
                 for key in keys_to_remove:
                     del self.__data[key]
@@ -228,6 +238,12 @@ class TTLCache(Cache):
 class LRUCache(Cache):
     """
     A cache implementation with Least Recently Used (LRU) functionality.
+
+    LRU Cache evicts the least recently used items first to make room for new data when storage is full.
+
+    Is using queue data structure to store order of items' access.
+    Built upon custom implementation of HashMap.
+    Employs threading.Lock to maintain data integrity during simultaneous access.
     """
 
     def __init__(self, capacity: int, hash_func_type: HashFunctionType = None):
@@ -257,7 +273,7 @@ class LRUCache(Cache):
             try:
                 value = self.__data[key]
                 self.__order.remove(key)
-                self.__order.appendleft(key)
+                self.__order.appendleft(key)  # update pair's order
                 return str(value)
             except (KeyError, TypeError):
                 return ""
@@ -272,10 +288,11 @@ class LRUCache(Cache):
         """
         with self.__lock:
             if key in self.__data:
-                self.__order.remove(key)
+                self.__order.remove(key)  # if key already exists change its order
             elif len(self.__data) >= self.__capacity:
-                lru_key = self.__order.pop()
+                lru_key = self.__order.pop()  # if capacity is full, remove LRU pair
                 del self.__data[lru_key]
+
             self.__data[key] = value
             self.__order.appendleft(key)
 
@@ -306,6 +323,12 @@ class LRUCache(Cache):
 class LFUCache(Cache):
     """
     A cache implementation with Least Frequently Used (LFU) functionality.
+
+    LFU Cache evicts the least frequently used items first to make room for new data when storage is full.
+
+    Is using queue data structure to store frequency list.
+    Built upon custom implementation of HashMap.
+    Employs threading.Lock to maintain data integrity during simultaneous access.
     """
 
     def __init__(self, capacity: int, hash_func_type: HashFunctionType = None):
@@ -336,6 +359,7 @@ class LFUCache(Cache):
         with self.__lock:
             if key not in self.__data:
                 return ""
+
             value = self.__data[key]
             self._update_frequency(key)
             return str(value)
@@ -361,7 +385,7 @@ class LFUCache(Cache):
 
                 self.__data[key] = value
                 self.__freq[key] = 1
-                self.__freq_lists[1].append(key)
+                self.__freq_lists[1].append(key)  # if a new key -> set frequency to 1
                 self.__min_freq = 1
 
     def remove(self, key):
@@ -376,7 +400,7 @@ class LFUCache(Cache):
                 freq = self.__freq[key]
                 self.__freq_lists[freq].remove(key)
                 if not self.__freq_lists[freq]:
-                    del self.__freq_lists[freq]
+                    del self.__freq_lists[freq]  # remove pair's frequency record
                     if self.__min_freq == freq:
                         self.__min_freq += 1
 
@@ -407,7 +431,7 @@ class LFUCache(Cache):
                 self.__min_freq += 1
 
         self.__freq[key] += 1
-        new_freq = self.__freq[key]
+        new_freq = self.__freq[key]  # update frequency record
         self.__freq_lists[new_freq].append(key)
 
     def _evict(self):
