@@ -1,39 +1,27 @@
-rediska/
+Rediska/
+├── .venv/
 ├── app/
-│   ├── __init__.py
 │   ├── core/
+│   │   ├── config/
+│   │   │   ├── settings.yaml
+│   │   │   └── VERSION
 │   │   ├── __init__.py
-│   │   ├── database.py
-│   │   ├── parser.py
-│   │   ├── tcp_server.py
-│   │   ├── file_handler.py
 │   │   ├── cache.py
-│   │   ├── hashing.py
 │   │   ├── cli.py
 │   │   ├── config.py
-│   ├── library/
-│   │   ├── __init__.py
-│   │   └── library.py
-│   └── utils/
+│   │   ├── database.py
+│   │   ├── file_handler.py
+│   │   ├── hashing.py
+│   │   ├── parser.py
+│   │   └── tcp_server.py
+│   └──  library/
 │       ├── __init__.py
-│       └── utils.py
-├── tests/
-│   ├── __init__.py
-│   ├── test_cli.py
-│   ├── test_database.py
-│   ├── test_parser.py
-│   ├── test_socket_connection.py
-│   ├── test_file_handler.py
-│   ├── test_cache.py
-│   ├── test_hashing.py
-│   ├── test_config.py
-│   ├── test_library.py
-│   └── test_utils.py
-├── examples/
-│   ├── basic_usage.py
-│   └── advanced_features.py
-├── config/
-│   └── prod.yaml
+│       ├── library.py
+│       └── tcp_client.py
+├── Makefile
 ├── README.md
+├── requirements.txt
 ├── setup.py
-└── requirements.txt
+├── storage.red
+└── structure/
+

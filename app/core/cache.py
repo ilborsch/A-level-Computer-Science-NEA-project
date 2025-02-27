@@ -445,3 +445,4 @@ class LFUCache(Cache):
 
         del self.__data[key_to_evict]
         del self.__freq[key_to_evict]
+
