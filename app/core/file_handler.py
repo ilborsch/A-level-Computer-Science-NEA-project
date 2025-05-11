@@ -28,8 +28,11 @@ class FileReader:
         Returns:
             str: The content of the file.
         """
-        with open(self.__filepath, 'r') as file:
-            return file.read()
+        try:
+            with open(self.__filepath, 'r') as file:
+                return file.read()
+        except FileNotFoundError:
+            return ""
 
     def read_lines(self) -> list[str]:
         """
@@ -38,8 +41,11 @@ class FileReader:
         Returns:
             list[str]: A list of lines from the file.
         """
-        with open(self.__filepath, 'r') as file:
-            return file.readlines()
+        try:
+            with open(self.__filepath, 'r') as file:
+                return file.readlines()
+        except FileNotFoundError:
+            return []
 
 
 class FileWriter:
@@ -128,6 +134,8 @@ class FileStorageHandler:
 
         file_content = self.__file_reader.read_lines()
         for line in file_content:
+            if line == '\n':
+                continue
             key, value = line.strip().split('=')
             pair = KeyValue(key, value)
             new_cache.set(pair.key, pair.value)

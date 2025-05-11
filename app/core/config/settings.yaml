@@ -1,0 +1,8 @@
+cache:
+  capacity: 3
+  hash_function: folding
+  ttl_seconds: 10
+  type: lfu
+user:
+  password: ''
+  username: ''

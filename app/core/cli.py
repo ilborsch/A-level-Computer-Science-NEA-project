@@ -1,4 +1,5 @@
 import argparse
+import sys
 from database import Database
 from parser import Operation
 from pathlib import Path
@@ -186,7 +187,12 @@ class CLI:
         Returns:
             argparse.Namespace: Parsed arguments object.
         """
-        return self.__parser.parse_args()
+        try:
+            return self.__parser.parse_args()
+        except SystemExit as e:
+            if e.code == 2:
+                print("Error: Invalid arguments provided. Use 'docs' for usage documentation.")
+                sys.exit(0)
 
     def exit(self):
         """
